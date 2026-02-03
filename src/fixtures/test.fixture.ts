@@ -5,6 +5,7 @@ import { cleanupAll } from '../helpers/api';
 import {
   SidebarNav,
   PipelineListPage,
+  SeriesListPage,
   DialogPage,
   BoardPage,
   CalendarPage,
@@ -26,6 +27,7 @@ if (!fs.existsSync(istanbulCoverageDir)) {
 type TestFixtures = {
   sidebar: SidebarNav;
   pipelineList: PipelineListPage;
+  seriesList: SeriesListPage;
   dialog: DialogPage;
   board: BoardPage;
   calendar: CalendarPage;
@@ -80,6 +82,10 @@ export const test = base.extend<TestFixtures>({
 
   pipelineList: async ({ page }, use) => {
     await use(new PipelineListPage(page));
+  },
+
+  seriesList: async ({ page }, use) => {
+    await use(new SeriesListPage(page));
   },
 
   dialog: async ({ page }, use) => {

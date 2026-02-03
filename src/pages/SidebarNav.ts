@@ -3,27 +3,21 @@ import { BasePage } from './BasePage';
 
 /**
  * Page object for sidebar navigation.
+ *
+ * URL Structure: /pipelines/:pipelineId/series | /board | /calendar
  */
 export class SidebarNav extends BasePage {
   readonly sidebar: Locator;
-  readonly pipelinesLink: Locator;
   readonly calendarLink: Locator;
   readonly boardLink: Locator;
 
   constructor(page: Page) {
     super(page);
-    this.sidebar = page.locator('[data-testid="sidebar"], nav, aside').first();
-    this.pipelinesLink = page.getByRole('link', { name: /pipelines?/i });
-    this.calendarLink = page.getByRole('link', { name: /calendar/i });
-    this.boardLink = page.getByRole('link', { name: /board|kanban/i });
-  }
-
-  /**
-   * Navigate to Pipelines view.
-   */
-  async goToPipelines(): Promise<void> {
-    await this.clickAndWait(this.pipelinesLink);
-    await expect(this.page).toHaveURL(/.*pipelines?.*/i);
+    // Sidebar is an <aside> element inside the layout
+    this.sidebar = page.locator('aside');
+    // Navigation links use specific text
+    this.calendarLink = page.getByRole('link', { name: /content calendar/i });
+    this.boardLink = page.getByRole('link', { name: /board view/i });
   }
 
   /**
@@ -39,7 +33,16 @@ export class SidebarNav extends BasePage {
    */
   async goToBoard(): Promise<void> {
     await this.clickAndWait(this.boardLink);
-    await expect(this.page).toHaveURL(/.*board|kanban.*/i);
+    await expect(this.page).toHaveURL(/.*board.*/i);
+  }
+
+  /**
+   * Click on a pipeline by name to navigate to its series list.
+   */
+  async goToPipeline(name: string): Promise<void> {
+    const pipelineLink = this.page.getByRole('link', { name });
+    await this.clickAndWait(pipelineLink);
+    await expect(this.page).toHaveURL(/.*\/pipelines\/\d+\/series.*/i);
   }
 
   /**
@@ -50,10 +53,17 @@ export class SidebarNav extends BasePage {
   }
 
   /**
-   * Get all navigation links.
+   * Get all navigation links in the sidebar.
    */
   async getNavLinks(): Promise<string[]> {
-    const links = await this.page.locator('nav a, aside a').allTextContents();
+    const links = await this.sidebar.locator('a').allTextContents();
     return links.filter((text) => text.trim().length > 0);
+  }
+
+  /**
+   * Check if pipeline exists in sidebar.
+   */
+  async hasPipeline(name: string): Promise<boolean> {
+    return this.page.getByRole('link', { name }).isVisible();
   }
 }

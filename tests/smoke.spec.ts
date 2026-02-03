@@ -1,15 +1,34 @@
 import { test, expect } from '../src/fixtures';
+import { createPipeline, cleanupAll, type Pipeline } from '../src/helpers/api';
+
+let testPipeline: Pipeline;
 
 test.describe('Smoke Tests', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+  test.beforeAll(async () => {
+    // Seed a default pipeline for tests
+    try {
+      testPipeline = await createPipeline('Test Pipeline', 'E2E smoke test pipeline');
+      console.log('Created test pipeline:', testPipeline.id);
+    } catch (error) {
+      console.error('Failed to create pipeline:', error);
+      throw error;
+    }
+  });
+
+  test.afterAll(async () => {
+    // Cleanup test data
+    await cleanupAll();
   });
 
   test('app loads without errors', async ({ page }) => {
-    // Check page loaded successfully
-    await expect(page).toHaveTitle(/.*/);
+    // Navigate directly to the test pipeline's series page
+    await page.goto(`/pipelines/${testPipeline.id}/series`);
+    await page.waitForLoadState('networkidle');
 
-    // No console errors
+    // Check page loaded successfully
+    await expect(page).toHaveURL(/.*\/pipelines\/\d+\/series.*/);
+
+    // Verify no critical console errors
     const errors: string[] = [];
     page.on('console', (msg) => {
       if (msg.type() === 'error') {
@@ -27,42 +46,32 @@ test.describe('Smoke Tests', () => {
     expect(criticalErrors).toHaveLength(0);
   });
 
-  test('sidebar renders with navigation items', async ({ sidebar }) => {
-    // Sidebar should be visible
+  test('sidebar renders with navigation items', async ({ page, sidebar }) => {
+    // Navigate directly to the test pipeline
+    await page.goto(`/pipelines/${testPipeline.id}/series`);
+    await page.waitForLoadState('networkidle');
+
+    // Sidebar should be visible (desktop view)
     await expect(sidebar.sidebar).toBeVisible();
 
     // Should have navigation links
     const links = await sidebar.getNavLinks();
     expect(links.length).toBeGreaterThan(0);
-
-    // Should have key navigation items (case-insensitive check)
-    const linkTexts = links.map((l) => l.toLowerCase());
-    const hasNavigation =
-      linkTexts.some((l) => l.includes('pipeline')) ||
-      linkTexts.some((l) => l.includes('calendar')) ||
-      linkTexts.some((l) => l.includes('board'));
-
-    expect(hasNavigation).toBe(true);
   });
 
   test('can navigate between views', async ({ page, sidebar }) => {
-    // Navigate to pipelines
-    try {
-      await sidebar.goToPipelines();
-      await expect(page).toHaveURL(/pipeline/i);
-    } catch {
-      // Pipelines might be the default view, check URL contains pipelines or is root
-      const url = page.url();
-      expect(url.includes('pipeline') || url.endsWith('/')).toBe(true);
-    }
+    // Start at the test pipeline's series page
+    await page.goto(`/pipelines/${testPipeline.id}/series`);
+    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveURL(/.*\/pipelines\/\d+\/series.*/);
 
-    // Navigate to calendar
-    await sidebar.goToCalendar();
-    await expect(page).toHaveURL(/calendar/i);
-
-    // Navigate to board
+    // Navigate to board view
     await sidebar.goToBoard();
-    await expect(page).toHaveURL(/board|kanban/i);
+    await expect(page).toHaveURL(/.*\/board.*/);
+
+    // Navigate to calendar view
+    await sidebar.goToCalendar();
+    await expect(page).toHaveURL(/.*\/calendar.*/);
   });
 
   test('API health check', async ({ page }) => {

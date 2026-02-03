@@ -11,9 +11,13 @@ import {
 } from '../pages';
 
 // Coverage directory setup
-const coverageDir = path.join(process.cwd(), 'coverage', 'v8');
-if (!fs.existsSync(coverageDir)) {
-  fs.mkdirSync(coverageDir, { recursive: true });
+const v8CoverageDir = path.join(process.cwd(), 'coverage', 'v8');
+const istanbulCoverageDir = path.join(process.cwd(), 'coverage', 'istanbul');
+if (!fs.existsSync(v8CoverageDir)) {
+  fs.mkdirSync(v8CoverageDir, { recursive: true });
+}
+if (!fs.existsSync(istanbulCoverageDir)) {
+  fs.mkdirSync(istanbulCoverageDir, { recursive: true });
 }
 
 /**
@@ -36,7 +40,7 @@ export const test = base.extend<TestFixtures>({
     // Run the test
     await use(page);
 
-    // Stop and save coverage
+    // Stop and save V8 coverage
     const coverage = await page.coverage.stopJSCoverage();
 
     // Filter to app code only
@@ -47,11 +51,25 @@ export const test = base.extend<TestFixtures>({
       );
     });
 
-    // Save coverage data
+    const testName = testInfo.title.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+
+    // Save V8 coverage data
     if (appCoverage.length > 0) {
-      const testName = testInfo.title.replace(/[^a-z0-9]/gi, '-').toLowerCase();
-      const coverageFile = path.join(coverageDir, `${testName}-${testInfo.workerIndex}.json`);
+      const coverageFile = path.join(v8CoverageDir, `${testName}-${testInfo.workerIndex}.json`);
       fs.writeFileSync(coverageFile, JSON.stringify(appCoverage, null, 2));
+    }
+
+    // Collect Istanbul coverage (from vite-plugin-istanbul instrumentation)
+    try {
+      const istanbulCoverage = await page.evaluate(() => {
+        return (window as unknown as { __coverage__?: object }).__coverage__;
+      });
+      if (istanbulCoverage && Object.keys(istanbulCoverage).length > 0) {
+        const istanbulFile = path.join(istanbulCoverageDir, `${testName}-${testInfo.workerIndex}.json`);
+        fs.writeFileSync(istanbulFile, JSON.stringify(istanbulCoverage, null, 2));
+      }
+    } catch {
+      // Istanbul coverage not available (instrumentation may not be enabled)
     }
   },
 

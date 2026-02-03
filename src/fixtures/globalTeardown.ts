@@ -41,6 +41,31 @@ async function globalTeardown(): Promise<void> {
       );
 
       console.log(`✅ JaCoCo coverage saved to ${coverageDir}/jacoco.exec`);
+
+      // Generate HTML report if class files are available
+      const apiClassDir = path.join(projectDir, '..', 'creatorpipeline-api', 'build', 'classes', 'java', 'main');
+      const apiSrcDir = path.join(projectDir, '..', 'creatorpipeline-api', 'src', 'main', 'java');
+
+      if (fs.existsSync(apiClassDir)) {
+        console.log('📊 Generating JaCoCo HTML report...');
+        try {
+          execSync(
+            `java -jar /tmp/jacococli.jar report ${coverageDir}/jacoco.exec ` +
+            `--classfiles ${apiClassDir} ` +
+            `--sourcefiles ${apiSrcDir} ` +
+            `--html ${coverageDir}/html ` +
+            `--xml ${coverageDir}/jacoco.xml ` +
+            `--csv ${coverageDir}/jacoco.csv`,
+            { cwd: projectDir, stdio: 'pipe' }
+          );
+          console.log(`✅ JaCoCo HTML report generated at ${coverageDir}/html/index.html`);
+        } catch (reportError) {
+          console.log('⚠️  Could not generate JaCoCo HTML report');
+        }
+      } else {
+        console.log('⚠️  API class files not found, skipping HTML report generation');
+        console.log('   Run "cd ../creatorpipeline-api && ./gradlew classes" first');
+      }
     } catch (coverageError) {
       console.log('⚠️  Could not collect JaCoCo coverage (container may have stopped)');
     }

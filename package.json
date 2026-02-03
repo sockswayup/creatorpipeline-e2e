@@ -7,7 +7,9 @@
     "test": "playwright test",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
-    "test:debug": "playwright test --debug"
+    "test:debug": "playwright test --debug",
+    "test:coverage": "playwright test && node scripts/report-coverage.js",
+    "coverage:report": "node scripts/report-coverage.js"
   },
   "keywords": [
     "e2e",
@@ -19,6 +21,8 @@
   "devDependencies": {
     "@playwright/test": "^1.58.1",
     "@types/node": "^25.2.0",
-    "typescript": "^5.9.3"
+    "nyc": "^17.1.0",
+    "typescript": "^5.9.3",
+    "v8-to-istanbul": "^9.3.0"
   }
 }

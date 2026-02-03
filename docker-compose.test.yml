@@ -50,6 +50,8 @@ services:
     build:
       context: ../creatorpipeline-ui
       dockerfile: Dockerfile
+      args:
+        VITE_COVERAGE: "true"
     container_name: e2e-creatorpipeline-ui
     ports:
       - "13000:80"

@@ -9,8 +9,10 @@
     "test:ui": "playwright test --ui",
     "test:debug": "playwright test --debug",
     "test:coverage": "playwright test && npm run coverage:report",
-    "coverage:report": "node scripts/generate-frontend-report.js && node scripts/report-coverage.js",
-    "coverage:html": "node scripts/generate-frontend-report.js && echo 'Backend report at coverage/backend/html/index.html'"
+    "coverage:report": "node scripts/generate-istanbul-report.js && node scripts/report-coverage.js",
+    "coverage:html": "node scripts/generate-istanbul-report.js && echo 'Backend report at coverage/backend/html/index.html'",
+    "coverage:v8": "node scripts/generate-frontend-report.js",
+    "coverage:istanbul": "node scripts/generate-istanbul-report.js"
   },
   "keywords": [
     "e2e",

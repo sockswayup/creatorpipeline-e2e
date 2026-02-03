@@ -1,0 +1,68 @@
+# Isolated E2E test environment
+# Ports: API=18080, UI=13000, Postgres=15432
+# Volume: creatorpipeline-e2e-pgdata (separate from dogfood)
+
+services:
+  e2e-db:
+    image: postgres:16
+    container_name: e2e-creatorpipeline-db
+    environment:
+      POSTGRES_DB: creatorpipeline_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "15432:5432"
+    volumes:
+      - e2e-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d creatorpipeline_test"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  e2e-api:
+    build:
+      context: ../creatorpipeline-api
+      dockerfile: Dockerfile.coverage
+    container_name: e2e-creatorpipeline-api
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://e2e-db:5432/creatorpipeline_test
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_PROFILES_ACTIVE: test
+      SPRING_FLYWAY_ENABLED: true
+      SPRING_FLYWAY_CLEAN_DISABLED: false
+    ports:
+      - "18080:8080"
+      - "6300:6300"
+    depends_on:
+      e2e-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
+
+  e2e-ui:
+    build:
+      context: ../creatorpipeline-ui
+      dockerfile: Dockerfile
+    container_name: e2e-creatorpipeline-ui
+    ports:
+      - "13000:80"
+    depends_on:
+      e2e-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  e2e-pgdata:
+    name: creatorpipeline-e2e-pgdata

@@ -3,8 +3,13 @@ import { createPipeline, cleanupAll, type Pipeline } from '../src/helpers/api';
 
 let testPipeline: Pipeline;
 
+// Run smoke tests serially to avoid conflicts with other test files
+test.describe.configure({ mode: 'serial' });
+
 test.describe('Smoke Tests', () => {
   test.beforeAll(async () => {
+    // Clean up any existing data first
+    await cleanupAll();
     // Seed a default pipeline for tests
     try {
       testPipeline = await createPipeline('Test Pipeline', 'E2E smoke test pipeline');

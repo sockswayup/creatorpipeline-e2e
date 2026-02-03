@@ -108,12 +108,12 @@ export async function deletePipeline(id: number): Promise<void> {
 export async function createSeries(
   pipelineId: number,
   name: string,
-  publishDay: string = 'MONDAY',
+  publishDays: string[] = ['MONDAY'],
   description?: string
 ): Promise<Series> {
   return apiRequest<Series>('POST', `/pipelines/${pipelineId}/series`, {
     name,
-    publishDay,
+    publishDays,
     description,
   });
 }

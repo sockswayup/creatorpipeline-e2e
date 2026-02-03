@@ -52,6 +52,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_COVERAGE: "true"
+        VITE_API_BASE: "http://localhost:18080/api/v1"
     container_name: e2e-creatorpipeline-ui
     ports:
       - "13000:80"

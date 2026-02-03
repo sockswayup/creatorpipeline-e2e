@@ -4,8 +4,9 @@ export default defineConfig({
   testDir: './tests',
   outputDir: './test-results',
 
-  /* Run tests in files in parallel */
-  fullyParallel: true,
+  /* Run tests serially - shared database means parallel tests conflict */
+  fullyParallel: false,
+  workers: 1,
 
   /* Fail the build on CI if you accidentally left test.only in the source code */
   forbidOnly: !!process.env.CI,
